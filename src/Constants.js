@@ -46,6 +46,13 @@ export const equites = (unitId, playerId, tile) => {
   }
 }
 
-export const speculatores = () => {
-  // 
+export const speculator = (speculatorId, playerId) => {
+  return {
+    playerId: playerId,
+    speculatorId: speculatorId,
+    tile: null,
+    destinationUnit: null,
+    awayRoute: [],
+    returnRoute: [],
+  }
 }

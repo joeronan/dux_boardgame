@@ -16,7 +16,7 @@ const InfoGameBoard = ({ ctx, G, moves, events }) => {
   const [orderStage, setOrderStage] = React.useState(0)
   const [orderUnit, setOrderUnit] = React.useState(null)
   const [orderSteps, setOrderSteps] = React.useState([])
-  const [orderMessengerSteps, setOrderMessengerSteps] = React.useState([])
+  const [orderSpeculatorSteps, setOrderSpeculatorSteps] = React.useState([])
 
   const onClick = (tile) => {
     switch (orderStage) {
@@ -31,18 +31,24 @@ const InfoGameBoard = ({ ctx, G, moves, events }) => {
             setOrderStage(1)
           }
         } else {
-          // Handle if they haven't clicked a tile with a person on it
+          setOrderStage(-2)
+          setOrderSpeculatorSteps([tile])
         }
         break;
       case 1:
         setOrderSteps(orderSteps.concat([tile]))
         break;
       case 2:
-        setOrderMessengerSteps(orderMessengerSteps.concat([tile]))
-        setOrderStage(0)
+        setOrderSpeculatorSteps(orderSpeculatorSteps.concat([tile]))
         break;
       case -1:
         setOrderSteps(orderSteps.concat([tile]))
+        break;
+      case -2:
+        setOrderSpeculatorSteps(orderSpeculatorSteps.concat([tile]))
+        break;
+      default:
+        console.log('ERROR: ORDER STAGE BROKEN')
         break;
     }
   }
@@ -55,31 +61,46 @@ const InfoGameBoard = ({ ctx, G, moves, events }) => {
         setOrderStage(2)
         break;
       case 2:
-        moves.sendOrder(orderUnit, orderSteps, orderMessengerSteps);
+        moves.sendOrder(orderUnit, orderSteps, orderSpeculatorSteps);
         setOrderUnit(null)
         setOrderSteps([])
-        setOrderMessengerSteps([])
+        setOrderSpeculatorSteps([])
         setOrderStage(0)
         break;
       case -1:
         moves.moveDux(orderUnit, orderSteps);
         setOrderUnit(null)
         setOrderSteps([])
-        setOrderMessengerSteps([])
+        setOrderSpeculatorSteps([])
         setOrderStage(0)
+        break;
+      case -2:
+        moves.sendSpeculator(orderSpeculatorSteps);
+        setOrderSpeculatorSteps([])
+        setOrderStage(0)
+        break;
+      default:
+        console.log('ERROR: ORDER STAGE BROKEN')
         break;
     }
   }
 
-  const getBoard = (units, spectator) => {
+  const getBoard = (units, speculatores, spectator) => {
 
     const tiles = new Array(9);
     for (var i = 0; i < 9; i++) {
-      tiles[i] = new Array(9).fill({ unit: null });
+      tiles[i] = new Array(9).fill({ unit: null, speculatores: null });
     }
 
     units.forEach((unit) => {
-      tiles[unit.tile[0]][unit.tile[1]] = { unit: unit }
+      tiles[unit.tile[0]][unit.tile[1]] = { unit: unit, speculatores: tiles[unit.tile[0]][unit.tile[1]].speculatores }
+    })
+
+    speculatores.forEach((speculator) => {
+      if (speculator.tile !== null) {
+        console.log(speculator.tile)
+        tiles[speculator.tile[0]][speculator.tile[1]] = { unit: tiles[speculator.tile[0]][speculator.tile[1]].unit, speculatores: speculator }
+      }
     })
 
     let tbody = [];
@@ -92,6 +113,8 @@ const InfoGameBoard = ({ ctx, G, moves, events }) => {
             onClick={() => onClick([i, j])}>
             {(tiles[i][j].unit !== null) && `${tiles[i][j].unit.unitTypeShort}${tiles[i][j].unit.playerId}`}
             {((tiles[i][j].unit !== null) && !spectator) && `T${Math.floor((ctx.turn - tiles[i][j].unit.lastSeen) / ctx.numPlayers)}`}
+            {(tiles[i][j].speculatores !== null) && ` s`}
+            {/* {((tiles[i][j].speculatores !== null) && !spectator) && `T${Math.floor((ctx.turn - tiles[i][j].speculatores.lastSeen) / ctx.numPlayers)}`} */}
           </td>
         )
       }
@@ -101,8 +124,8 @@ const InfoGameBoard = ({ ctx, G, moves, events }) => {
     return tbody
   }
 
-  const playerTbody = getBoard(G.players[ctx.currentPlayer].units, false)
-  const secretTbody = getBoard(G.secret.units, true)
+  const playerTbody = getBoard(G.players[ctx.currentPlayer].units, G.players[ctx.currentPlayer].speculatores, false)
+  const secretTbody = getBoard(G.secret.units, G.secret.speculatores, true)
 
   return (
     <>
