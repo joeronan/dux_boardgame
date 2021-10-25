@@ -22,7 +22,7 @@ const InfoGameBoard = ({ ctx, G, moves, events }) => {
 
         if (unitList.length > 0) {
           setOrderUnit(unitList[0])
-          if (unitList[0].unitType === 'general') {
+          if (unitList[0].unitType === 'dux') {
             setOrderStage(-1)
           } else {
             setOrderStage(1)
@@ -59,7 +59,7 @@ const InfoGameBoard = ({ ctx, G, moves, events }) => {
         setOrderStage(0)
         break;
       case -1:
-        moves.moveGeneral(orderUnit, orderSteps);
+        moves.moveDux(orderUnit, orderSteps);
         setOrderUnit(null)
         setOrderSteps([])
         setOrderMessengerSteps([])
