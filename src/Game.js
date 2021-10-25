@@ -1,67 +1,18 @@
 import { PlayerView } from 'boardgame.io/core';
-
-const dux = (unitId, playerId, tile) => {
-  return {
-    unitType: 'dux',
-    unitTypeShort: 'd',
-    playerId: playerId,
-    unitId: unitId,
-    tile: tile,
-    orders: [],
-  }
-}
-
-const hastati = (unitId, playerId, tile) => {
-  return {
-    unitType: 'hastati',
-    unitTypeShort: 'h',
-    playerId: playerId,
-    unitId: unitId,
-    tile: tile,
-    orders: [],
-  }
-}
-
-const principes = (unitId, playerId, tile) => {
-  return {
-    unitType: 'principes',
-    unitTypeShort: 'p',
-    playerId: playerId,
-    unitId: unitId,
-    tile: tile,
-    orders: [],
-  }
-}
-
-const equites = (unitId, playerId, tile) => {
-  return {
-    unitType: 'equites',
-    unitTypeShort: 'e',
-    playerId: playerId,
-    unitId: unitId,
-    tile: tile,
-    orders: [],
-  }
-}
-
-const speculatores = () => {
-  // 
-}
-
-const distance = (x1, y1, x2, y2) => {
-  return Math.abs(x1 - x2) + Math.abs(y1 - y2)
-}
+import { distance, dux, hastati, principes, equites } from './Constants.js'
 
 export const InfoGame = {
   setup: () => {
     const units = [dux(0, 0, [0, 4]), dux(1, 1, [8, 4]), hastati(2, 0, [2, 2])]
 
+    const playerUnits = units.map(unit => Object.assign({}, unit, { lastSeen: 0 }))
+
     return {
       secret: { units: units },
 
       players: {
-        '0': { units: units, newOrders: [] },
-        '1': { units: units, newOrders: [] },
+        '0': { units: playerUnits, newOrders: [] },
+        '1': { units: playerUnits, newOrders: [] },
       }
     }
   },
@@ -75,8 +26,7 @@ export const InfoGame = {
       if (G.players[ctx.currentPlayer].newOrders.filter(x => x.unit.unitId === unit.unitId).length === 0) {
         G.players[ctx.currentPlayer].newOrders.push({
           unitId: unit.unitId,
-          x: steps.map(step => step[0]),
-          y: steps.map(step => step[1]),
+          steps: steps,
         })
       }
 
@@ -85,7 +35,7 @@ export const InfoGame = {
       // Introduce checks that steps & messenger step are both valid
     },
 
-    sendScout: (G, ctx, unit, x, y) => {
+    sendSpeculatores: (G, ctx, unit, x, y) => {
       // Implement scouting for speculatores
     },
 
@@ -124,10 +74,12 @@ export const InfoGame = {
       for (const [playerId, player] of Object.entries(G.players)) {
         G.secret.units.forEach((unit) => {
           // Needs to be changed to access the duces better
+          console.log(unit.tile)
           console.log(distance(unit.tile[0], unit.tile[1], G.secret.units[playerId].tile[0], G.secret.units[playerId].tile[1]))
           if (distance(unit.tile[0], unit.tile[1], G.secret.units[playerId].tile[0], G.secret.units[playerId].tile[1]) < 5) {
             console.log(unit.unitType, unit.playerId)
             player.units.filter((x) => x.unitId == unit.unitId)[0].tile = unit.tile
+            player.units.filter((x) => x.unitId == unit.unitId)[0].lastSeen = ctx.turn
           }
         })
 

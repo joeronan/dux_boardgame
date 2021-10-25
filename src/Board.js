@@ -1,4 +1,5 @@
 import React from 'react';
+import { distance } from './Constants.js'
 
 const tileStyle = {
   border: '1px solid #555',
@@ -7,6 +8,8 @@ const tileStyle = {
   lineHeight: '50px',
   textAlign: 'center',
 };
+
+const tileStyleDark = Object.assign({}, tileStyle, { backgroundColor: '#ccc' })
 
 const InfoGameBoard = ({ ctx, G, moves, events }) => {
 
@@ -68,7 +71,7 @@ const InfoGameBoard = ({ ctx, G, moves, events }) => {
     }
   }
 
-  const getBoard = (units) => {
+  const getBoard = (units, spectator) => {
 
     const tiles = new Array(9);
     for (var i = 0; i < 9; i++) {
@@ -83,11 +86,12 @@ const InfoGameBoard = ({ ctx, G, moves, events }) => {
     for (let i = 0; i < 9; i++) {
       let trow = [];
       for (let j = 0; j < 9; j++) {
-
         trow.push(
-          <td style={tileStyle} key={([i, j])} onClick={() => onClick([i, j])}>
-            {(tiles[i][j].unit !== null) && tiles[i][j].unit.unitTypeShort}
-            {(tiles[i][j].unit !== null) && tiles[i][j].unit.playerId}
+          <td key={([i, j])}
+            style={(distance(i, j, G.players[ctx.currentPlayer].units[ctx.currentPlayer].tile[0], G.players[ctx.currentPlayer].units[ctx.currentPlayer].tile[1]) < 5) || (spectator) ? tileStyle : tileStyleDark}
+            onClick={() => onClick([i, j])}>
+            {(tiles[i][j].unit !== null) && `${tiles[i][j].unit.unitTypeShort}${tiles[i][j].unit.playerId}`}
+            {((tiles[i][j].unit !== null) && !spectator) && `T${Math.floor((ctx.turn - tiles[i][j].unit.lastSeen) / ctx.numPlayers)}`}
           </td>
         )
       }
@@ -97,8 +101,8 @@ const InfoGameBoard = ({ ctx, G, moves, events }) => {
     return tbody
   }
 
-  const playerTbody = getBoard(G.players[ctx.currentPlayer].units)
-  const secretTbody = getBoard(G.secret.units)
+  const playerTbody = getBoard(G.players[ctx.currentPlayer].units, false)
+  const secretTbody = getBoard(G.secret.units, true)
 
   return (
     <>
