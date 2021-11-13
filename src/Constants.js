@@ -2,6 +2,15 @@ export const distance = (x1, y1, x2, y2) => {
   return Math.abs(x1 - x2) + Math.abs(y1 - y2)
 }
 
+export const unitSettings = {
+  dux: {
+    viewDistance: 5,
+  },
+  speculator: {
+    viewDistance: 5,
+  }
+}
+
 export const dux = (unitId, playerId, tile) => {
   return {
     unitType: 'dux',
@@ -54,5 +63,7 @@ export const speculator = (speculatorId, playerId) => {
     destinationUnit: null,
     awayRoute: [],
     returnRoute: [],
+    units: [],
+    speculatores: [],
   }
 }

@@ -9,7 +9,7 @@ const tileStyle = {
   textAlign: 'center',
 };
 
-const tileStyleDark = Object.assign({}, tileStyle, { backgroundColor: '#ccc' })
+const tileStyleDark = Object.assign({}, tileStyle, { backgroundColor: 'hsla(0, 3%, 50%, 0.1)' })
 
 const InfoGameBoard = ({ ctx, G, moves, events }) => {
 
