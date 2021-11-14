@@ -1,5 +1,5 @@
 import React from 'react';
-import { distance } from './Constants.js'
+import { distance, line } from './Constants.js'
 
 const tileStyle = {
   border: '1px solid #555',
@@ -11,12 +11,15 @@ const tileStyle = {
 
 const tileStyleDark = Object.assign({}, tileStyle, { backgroundColor: 'hsla(0, 3%, 50%, 0.1)' })
 
+const tileStyleHover = Object.assign({}, tileStyle, { backgroundColor: 'hsla(0, 3%, 50%, 0.3)' })
+
 const InfoGameBoard = ({ ctx, G, moves, events }) => {
 
   const [orderStage, setOrderStage] = React.useState(0)
   const [orderUnit, setOrderUnit] = React.useState(null)
   const [orderSteps, setOrderSteps] = React.useState([])
   const [orderSpeculatorSteps, setOrderSpeculatorSteps] = React.useState([])
+  const [hoverTiles, setHoverTiles] = React.useState([])
 
   const onClick = (tile) => {
     switch (orderStage) {
@@ -32,20 +35,20 @@ const InfoGameBoard = ({ ctx, G, moves, events }) => {
           }
         } else {
           setOrderStage(-2)
-          setOrderSpeculatorSteps([tile])
+          setOrderSpeculatorSteps(hoverTiles)
         }
         break;
       case 1:
-        setOrderSteps(orderSteps.concat([tile]))
+        setOrderSteps(hoverTiles)
         break;
       case 2:
-        setOrderSpeculatorSteps(orderSpeculatorSteps.concat([tile]))
+        setOrderSpeculatorSteps(hoverTiles)
         break;
       case -1:
-        setOrderSteps(orderSteps.concat([tile]))
+        setOrderSteps(hoverTiles)
         break;
       case -2:
-        setOrderSpeculatorSteps(orderSpeculatorSteps.concat([tile]))
+        setOrderSpeculatorSteps(hoverTiles)
         break;
       default:
         console.log('ERROR: ORDER STAGE BROKEN')
@@ -75,6 +78,7 @@ const InfoGameBoard = ({ ctx, G, moves, events }) => {
         setOrderStage(0)
         break;
       case -2:
+        console.log(orderSpeculatorSteps)
         moves.sendSpeculator(orderSpeculatorSteps);
         setOrderSpeculatorSteps([])
         setOrderStage(0)
@@ -82,6 +86,56 @@ const InfoGameBoard = ({ ctx, G, moves, events }) => {
       default:
         console.log('ERROR: ORDER STAGE BROKEN')
         break;
+    }
+  }
+
+  // Note: This way of getting duxTile is bad as we need to use client player id, not ctx.currentPlayer
+  const onMouseEnter = (tile) => {
+    switch (orderStage) {
+      case 0:
+        const duxTile = G.players[ctx.currentPlayer].units[ctx.currentPlayer].tile
+        setHoverTiles(line(duxTile[0], duxTile[1], tile[0], tile[1]))
+        break;
+      case 1:
+        if (orderSteps.length > 0) {
+          setHoverTiles(orderSteps.concat(line(orderSteps.at(-1)[0], orderSteps.at(-1)[1], tile[0], tile[1])))
+        } else {
+          setHoverTiles(line(orderUnit.tile[0], orderUnit.tile[1], tile[0], tile[1]))
+        }
+        break;
+      case 2:
+        if (orderSpeculatorSteps.length > 0) {
+          setHoverTiles(orderSpeculatorSteps.concat(line(orderSpeculatorSteps.at(-1)[0], orderSpeculatorSteps.at(-1)[1], tile[0], tile[1])))
+        } else {
+          const duxTile = G.players[ctx.currentPlayer].units[ctx.currentPlayer].tile
+          setHoverTiles(line(duxTile[0], duxTile[1], tile[0], tile[1]))
+        }
+        break;
+      case -1:
+        if (orderSteps.length > 0) {
+          setHoverTiles(orderSteps.concat(line(orderSteps.at(-1)[0], orderSteps.at(-1)[1], tile[0], tile[1])))
+        } else {
+          setHoverTiles(line(orderUnit.tile[0], orderUnit.tile[1], tile[0], tile[1]))
+        }
+        break;
+      case -2:
+        setHoverTiles(orderSpeculatorSteps.concat(line(orderSpeculatorSteps.at(-1)[0], orderSpeculatorSteps.at(-1)[1], tile[0], tile[1])))
+        break;
+      default:
+        console.log('ERROR: ORDER STAGE BROKEN')
+        break;
+    }
+  }
+
+  const setStyle = (i, j, spectator) => {
+    if (hoverTiles.filter(tile => (tile[0] === i) && (tile[1] === j)).length > 0) {
+      return tileStyleHover
+    } else {
+      if ((distance(i, j, G.players[ctx.currentPlayer].units[ctx.currentPlayer].tile[0], G.players[ctx.currentPlayer].units[ctx.currentPlayer].tile[1]) < 5) || (spectator)) {
+        return tileStyle
+      } else {
+        return tileStyleDark
+      }
     }
   }
 
@@ -98,7 +152,6 @@ const InfoGameBoard = ({ ctx, G, moves, events }) => {
 
     speculatores.forEach((speculator) => {
       if (speculator.tile !== null) {
-        console.log(speculator.tile)
         tiles[speculator.tile[0]][speculator.tile[1]] = { unit: tiles[speculator.tile[0]][speculator.tile[1]].unit, speculatores: speculator }
       }
     })
@@ -109,8 +162,10 @@ const InfoGameBoard = ({ ctx, G, moves, events }) => {
       for (let j = 0; j < 9; j++) {
         trow.push(
           <td key={([i, j])}
-            style={(distance(i, j, G.players[ctx.currentPlayer].units[ctx.currentPlayer].tile[0], G.players[ctx.currentPlayer].units[ctx.currentPlayer].tile[1]) < 5) || (spectator) ? tileStyle : tileStyleDark}
-            onClick={() => onClick([i, j])}>
+            style={setStyle(i, j, spectator)}
+            onClick={() => onClick([i, j])}
+            onMouseEnter={() => onMouseEnter([i, j])}
+            onMouseLeave={() => setHoverTiles([])}>
             {(tiles[i][j].unit !== null) && `${tiles[i][j].unit.unitTypeShort}${tiles[i][j].unit.playerId}`}
             {((tiles[i][j].unit !== null) && !spectator) && `T${Math.floor((ctx.turn - tiles[i][j].unit.lastSeen) / ctx.numPlayers)}`}
             {(tiles[i][j].speculatores !== null) && ` s`}
